@@ -378,8 +378,11 @@ function Send-isiAPI{
 
 .PARAMETER Method
 
+.PARAMETER headers
+
 .EXAMPLE
     Send-isiAPI -Resource "/platform/1/protocols/smb/shares" -Cluster IsilonC1 -Method GET
+    Send-isiAPI -Resource "/namespace/ifs/data/newfolder" -Cluster IsilonC1 -Method PUT -headers @{"x-isi-ifs-target-type"="container"}
 
 .NOTES
 
@@ -389,7 +392,8 @@ function Send-isiAPI{
     [Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$False,ValueFromPipeline=$false,Position=0)][string]$Resource,
     [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False,ValueFromPipeline=$false,Position=1)][ValidateSet('GET_JSON','GET','POST','PUT','DELETE','POST')][string]$Method="GET",
     [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False,ValueFromPipeline=$false,Position=2)][string]$body,
-    [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False,ValueFromPipeline=$false,Position=3)][string]$Cluster)
+    [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False,ValueFromPipeline=$false,Position=3)]$headers,
+    [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$False,ValueFromPipeline=$false,Position=4)][string]$Cluster)
 
     if(!(Test-Path variable:isi_sessions) -or !(Test-Path variable:isi_sessiondefault)){
         Write-Error "No Isilon Cluster connected"
@@ -420,13 +424,13 @@ function Send-isiAPI{
     }else{
             try{
                 if ($Method -eq 'GET_JSON') {
-                    $ISIObject = (Invoke-WebRequest -Uri $url -Method GET -WebSession $session -TimeoutSec $timeout -UseBasicParsing).content
+                    $ISIObject = (Invoke-WebRequest -Uri $url -Method GET -Headers $headers -WebSession $session -TimeoutSec $timeout -UseBasicParsing).content
 
                 } elseif ( ($Method -eq 'GET') -or ($Method -eq 'DELETE') ) {
-                    $ISIObject = (Invoke-WebRequest -Uri $url -Method $Method -WebSession $session -TimeoutSec $timeout -UseBasicParsing).content | ConvertFrom-Json
+                    $ISIObject = (Invoke-WebRequest -Uri $url -Method $Method -Headers $headers -WebSession $session -TimeoutSec $timeout -UseBasicParsing).content | ConvertFrom-Json
                 
                 } elseif ( ($Method -eq 'PUT') -or ($Method -eq 'POST') ) {
-                    $ISIObject = (Invoke-WebRequest -Uri $url -Method $Method -WebSession $session -TimeoutSec $timeout -Body $body -ContentType "application/json" -UseBasicParsing).content | ConvertFrom-Json
+                    $ISIObject = (Invoke-WebRequest -Uri $url -Method $Method -Headers $headers -WebSession $session -TimeoutSec $timeout -Body $body -ContentType "application/json" -UseBasicParsing).content | ConvertFrom-Json
 
                 }       
             } 
